@@ -69,8 +69,7 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
                     USER_STACK_TOP - (index + 1) * PGSIZE, PGSIZE, (uint64)pa,
                     prot_to_type(PROT_WRITE | PROT_READ, 1));
       } else {
-        sprint("store page fault at %lx\n", stval);
-        panic("store page fault");
+        panic("this address is not available!");
       }
       break;
     default:
