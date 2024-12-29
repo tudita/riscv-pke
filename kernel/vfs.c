@@ -6,9 +6,9 @@
 
 #include "pmm.h"
 #include "spike_interface/spike_utils.h"
+#include "util/hash_table.h"
 #include "util/string.h"
 #include "util/types.h"
-#include "util/hash_table.h"
 
 struct dentry *vfs_root_dentry;               // system root direntry
 struct super_block *vfs_sb_list[MAX_MOUNTS];  // system superblock list
@@ -22,19 +22,19 @@ struct hash_table vinode_hash_table;
 int vfs_init() {
   int ret;
   ret = hash_table_init(&dentry_hash_table, dentry_hash_equal, dentry_hash_func,
-                            NULL, NULL, NULL);
+                        NULL, NULL, NULL);
   if (ret != 0) return ret;
 
   ret = hash_table_init(&vinode_hash_table, vinode_hash_equal, vinode_hash_func,
-                            NULL, NULL, NULL);
+                        NULL, NULL, NULL);
   if (ret != 0) return ret;
-  return 0; 
+  return 0;
 }
 
 //
 // mount a file system from the device named "dev_name"
 // PKE does not support mounting a device at an arbitrary directory as in Linux,
-// but can only mount a device in one of the following two ways (according to 
+// but can only mount a device in one of the following two ways (according to
 // the mnt_type parameter) :
 // 1. when mnt_type = MOUNT_AS_ROOT
 //    Mount the device AS the root directory.
@@ -82,7 +82,9 @@ struct super_block *vfs_mount(const char *dev_name, int mnt_type) {
     hash_put_dentry(sb->s_root);
   } else if (mnt_type == MOUNT_DEFAULT) {
     if (!vfs_root_dentry)
-      panic("vfs_mount: root dentry not found, please mount the root device first!\n");
+      panic(
+          "vfs_mount: root dentry not found, please mount the root device "
+          "first!\n");
 
     struct dentry *mnt_point = sb->s_root;
 
@@ -109,7 +111,8 @@ struct super_block *vfs_mount(const char *dev_name, int mnt_type) {
 // return: the file pointer to the opened file.
 //
 struct file *vfs_open(const char *path, int flags) {
-  struct dentry *parent = vfs_root_dentry; // we start the path lookup from root.
+  struct dentry *parent =
+      vfs_root_dentry;  // we start the path lookup from root.
   char miss_name[MAX_PATH_LEN];
 
   // path lookup.
@@ -138,7 +141,7 @@ struct file *vfs_open(const char *path, int flags) {
       file_dentry->dentry_inode = new_inode;
       new_inode->ref++;
       hash_put_dentry(file_dentry);
-      hash_put_vinode(new_inode); 
+      hash_put_vinode(new_inode);
     } else {
       sprint("vfs_open: cannot find the file!\n");
       return NULL;
@@ -175,8 +178,8 @@ struct file *vfs_open(const char *path, int flags) {
   // additional open operations for a specific file system
   // hostfs needs to conduct actual file open.
   if (file_dentry->dentry_inode->i_ops->viop_hook_open) {
-    if (file_dentry->dentry_inode->i_ops->
-        viop_hook_open(file_dentry->dentry_inode, file_dentry) < 0) {
+    if (file_dentry->dentry_inode->i_ops->viop_hook_open(
+            file_dentry->dentry_inode, file_dentry) < 0) {
       sprint("vfs_open: hook_open failed!\n");
     }
   }
@@ -228,7 +231,8 @@ ssize_t vfs_lseek(struct file *file, ssize_t offset, int whence) {
     return -1;
   }
 
-  if (viop_lseek(file->f_dentry->dentry_inode, offset, whence, &(file->offset)) != 0) {
+  if (viop_lseek(file->f_dentry->dentry_inode, offset, whence,
+                 &(file->offset)) != 0) {
     sprint("vfs_lseek: lseek failed!\n");
     return -1;
   }
@@ -537,9 +541,11 @@ struct dentry *lookup_final_dentry(const char *path, struct dentry **parent,
         return NULL;
       }
 
-      struct vinode *same_inode = hash_get_vinode(found_vinode->sb, found_vinode->inum);
+      struct vinode *same_inode =
+          hash_get_vinode(found_vinode->sb, found_vinode->inum);
       if (same_inode != NULL) {
-        // the vinode is already in the hash table (i.e. we are opening another hard link)
+        // the vinode is already in the hash table (i.e. we are opening another
+        // hard link)
         this->dentry_inode = same_inode;
         same_inode->ref++;
         free_page(found_vinode);
@@ -579,8 +585,8 @@ void get_base_name(const char *path, char *base_name) {
 //
 // alloc a (virtual) file
 //
-struct file *alloc_vfs_file(struct dentry *file_dentry, int readable, int writable,
-                        int offset) {
+struct file *alloc_vfs_file(struct dentry *file_dentry, int readable,
+                            int writable, int offset) {
   struct file *file = alloc_page();
   file->f_dentry = file_dentry;
   file_dentry->d_ref += 1;
@@ -596,7 +602,7 @@ struct file *alloc_vfs_file(struct dentry *file_dentry, int readable, int writab
 // alloc a (virtual) dir entry
 //
 struct dentry *alloc_vfs_dentry(const char *name, struct vinode *inode,
-                            struct dentry *parent) {
+                                struct dentry *parent) {
   struct dentry *dentry = (struct dentry *)alloc_page();
   strcpy(dentry->name, name);
   dentry->dentry_inode = inode;
@@ -656,8 +662,7 @@ int hash_put_dentry(struct dentry *dentry) {
   key->parent = dentry->parent;
 
   int ret = dentry_hash_table.virtual_hash_put(&dentry_hash_table, key, dentry);
-  if (ret != 0)
-    free_page(key);
+  if (ret != 0) free_page(key);
   return ret;
 }
 
@@ -670,7 +675,8 @@ int hash_erase_dentry(struct dentry *dentry) {
 int vinode_hash_equal(void *key1, void *key2) {
   struct vinode_key *vinode_key1 = key1;
   struct vinode_key *vinode_key2 = key2;
-  if (vinode_key1->inum == vinode_key2->inum && vinode_key1->sb == vinode_key2->sb) {
+  if (vinode_key1->inum == vinode_key2->inum &&
+      vinode_key1->sb == vinode_key2->sb) {
     return 1;
   }
   return 0;
