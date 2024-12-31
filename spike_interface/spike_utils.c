@@ -10,6 +10,7 @@
 #include "util/snprintf.h"
 #include "spike_utils.h"
 #include "spike_file.h"
+#include "elf.h"
 
 //=============    encapsulating htif syscalls, invoking Spike functions    =============
 long frontend_syscall(long n, uint64 a0, uint64 a1, uint64 a2, uint64 a3, uint64 a4,
@@ -79,7 +80,7 @@ void sprint(const char* s, ...) {
   va_end(vl);
 }
 
-//===============    Spike-assisted termination, panic and assert    ===============
+//===============    Spike-assisted termination, panicv    and assert    ===============
 void poweroff(uint16_t code) {
   assert(htif);
   sprint("Power off\r\n");

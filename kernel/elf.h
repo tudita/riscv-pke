@@ -5,7 +5,23 @@
 #include "process.h"
 
 #define MAX_CMDLINE_ARGS 64
-
+#define SHT_NULL	0
+#define SHT_PROGBITS	1
+#define SHT_SYMTAB	2
+#define SHT_STRTAB	3
+#define SHT_RELA	4
+#define SHT_HASH	5
+#define SHT_DYNAMIC	6
+#define SHT_NOTE	7
+#define SHT_NOBITS	8
+#define SHT_REL		9
+#define SHT_SHLIB	10
+#define SHT_DYNSYM	11
+#define SHT_NUM		12
+#define SHT_LOPROC	0x70000000
+#define SHT_HIPROC	0x7fffffff
+#define SHT_LOUSER	0x80000000
+#define SHT_HIUSER	0xffffffff
 // elf header structure
 typedef struct elf_header_t {
   uint32 magic;
@@ -50,14 +66,44 @@ typedef enum elf_status_t {
 
 } elf_status;
 
+typedef struct elf_sym_t{
+  uint32 name;
+  unsigned char info;
+  unsigned char other;
+  uint16 shndx;
+  uint64 value;
+  uint64 size;
+} elf_sym;
+
 typedef struct elf_ctx_t {
   void *info;
   elf_header ehdr;
+  char strtab[1024*8];
+  elf_sym symtab[64];
+  int symtab_num;
+  int strtab_len;
 } elf_ctx;
+
+typedef struct elf_section_header_t {
+  uint32 name;
+  uint32 type;
+  uint64 flags;
+  uint64 addr;
+  uint64 offset;
+  uint64 size;
+  uint32 link;
+  uint32 info;
+  uint64 addralign;
+  uint64 entsize;
+} elf_section_header;
+//64位elf symbol表
+
+
 
 elf_status elf_init(elf_ctx *ctx, void *info);
 elf_status elf_load(elf_ctx *ctx);
 
 void load_bincode_from_host_elf(process *p);
+
 
 #endif
