@@ -27,13 +27,21 @@ ssize_t sys_user_print(const char* buf, size_t n) {
   sprint(pa);
   return 0;
 }
-
+extern process procs[NPROC];
 //
 // implement the SYS_user_exit syscall
 //
 ssize_t sys_user_exit(uint64 code) {
   sprint("User exit with code:%d.\n", code);
   // reclaim the current process, and reschedule. added @lab3_1
+  if(current->parent != NULL){
+    int pid = current->parent->pid;
+    if( procs[pid].status == BLOCKED){
+      procs[pid].status = READY;
+      procs[pid].trapframe->regs.a0 = current->pid;
+      insert_to_ready_queue(&procs[pid]);
+    }
+  }
   free_process( current );
   schedule();
   return 0;
@@ -77,7 +85,7 @@ uint64 sys_user_free_page(uint64 va) {
 // kerenl entry point of naive_fork
 //
 ssize_t sys_user_fork() {
-  sprint("User call fork.\n");
+  //sprint("User call fork.\n");
   return do_fork( current );
 }
 
@@ -95,7 +103,9 @@ ssize_t sys_user_yield() {
   schedule();
   return 0;
 }
-
+ssize_t sys_user_wait(uint64 pid) {
+  return do_wait(pid);
+}
 //
 // [a0]: the syscall number; [a1] ... [a7]: arguments to the syscalls.
 // returns the code of success, (e.g., 0 means success, fail for otherwise)
@@ -115,6 +125,8 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
       return sys_user_fork();
     case SYS_user_yield:
       return sys_user_yield();
+    case SYS_user_wait:
+      return sys_user_wait(a1);
     default:
       panic("Unknown syscall %ld \n", a0);
   }

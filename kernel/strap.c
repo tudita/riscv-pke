@@ -38,7 +38,7 @@ static uint64 g_ticks = 0;
 // added @lab1_3
 //
 void handle_mtimer_trap() {
-  sprint("Ticks %d\n", g_ticks);
+  //sprint("Ticks %d\n", g_ticks);
   g_ticks++;
   write_csr(sip, read_csr(sip) & ~SIP_SSIP);
   // TODO (lab1_3): increase g_ticks to record this "tick", and then clear the
@@ -54,23 +54,18 @@ void handle_mtimer_trap() {
 // stval: the virtual address that causes pagefault when being accessed.
 //
 void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
-  sprint("handle_page_fault: %lx\n", stval);
+  //sprint("handle_page_fault: %lx\n", stval);
   switch (mcause) {
     case CAUSE_STORE_PAGE_FAULT:
       // TODO (lab2_3): implement the operations that solve the page fault to
       // dynamically increase application stack.
       // hint: first allocate a new physical page, and then, maps the new page
       // to the virtual address that causes the page fault.
-      if (stval < USER_STACK_TOP && stval >= USER_STACK_TOP - PGSIZE * 20) {
-        void* pa = alloc_page();
-        uint64 index = (USER_STACK_TOP - stval) / PGSIZE;
-        user_vm_map((pagetable_t)current->pagetable,
-                    USER_STACK_TOP - (index + 1) * PGSIZE, PGSIZE, (uint64)pa,
-                    prot_to_type(PROT_WRITE | PROT_READ, 1));
-      } else {
-        sprint("store page fault at %lx\n", stval);
-        panic("store page fault");
-      }
+      void* pa = alloc_page();
+      uint64 index = (USER_STACK_TOP - stval) / PGSIZE;
+      user_vm_map((pagetable_t)current->pagetable,
+                  USER_STACK_TOP - (index + 1) * PGSIZE, PGSIZE, (uint64)pa,
+                  prot_to_type(PROT_WRITE | PROT_READ, 1));
       break;
     default:
       sprint("unknown page fault.\n");

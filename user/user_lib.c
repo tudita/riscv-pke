@@ -76,3 +76,8 @@ int fork() {
 void yield() {
   do_user_call(SYS_user_yield, 0, 0, 0, 0, 0, 0, 0);
 }
+
+void wait(uint64 pid) {
+  // wait for the child process to exit
+  do_user_call(SYS_user_wait, pid, 0, 0, 0, 0, 0, 0);
+}
