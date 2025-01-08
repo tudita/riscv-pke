@@ -35,10 +35,12 @@ ssize_t sys_user_exit(uint64 code) {
 }
 ssize_t sys_user_backtrace(uint64 n) {
   riscv_regs regs =  current->trapframe->regs;
-  uint64 ra = regs.ra;
+  
   uint64 fp = regs.s0;
+  uint64 ra = fp + 8;
   uint64 sp = regs.sp;
-  uint64 p = sp + 40;
+  uint64 p = ra;
+  //sprint("0x%lx: p\n", p);
   //打印用户栈100字节
   //for(int i = 0; i < 100; i++) {
   //  sprint("0x%lx: 0x%lx\n", sp, *((uint64*)sp));
